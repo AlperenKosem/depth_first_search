@@ -6,20 +6,20 @@
 #define maze_rows 31
 #define maze_cols 44 
 
-// char** maze; //maze'i sakladigim degisken //2D Array olacak
+char** maze_str; //maze'i sakladigim degisken 
 char** visited;
 
 int rows = maze_rows;
 int cols = maze_cols ;
-int* apples;
 int maze[maze_rows][maze_cols];
+int* apples;
 
-int baslangic_row;
-int baslangic_col;
 
-int bitis_row;
-int bitis_col;
+struct position baslangic_position;
+struct position bitis_position;
 
+
+////////////stack declaration and functions
 struct position{
     int row, col;
 };
@@ -51,7 +51,6 @@ void printAllStruct(struct node* root){
     }
     
 }
-
 
 struct position pop(struct node* root){
     if( root == NULL ){
@@ -113,20 +112,37 @@ struct node* push(struct node* root, struct position data){ // void de yazilabil
 
 }
 
+/////////////////////////
 
 
+void allocateMaze()
+{
+    maze_str = malloc(rows * sizeof(char*));
 
-void printMaze(){
+    for( int i = 0 ; i < rows ; i++ )
+    {
+        maze_str[i] = malloc(cols * sizeof(char*));
+    }
+    
+}
+
+void printMazeStr(){
+     for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j) {
+                printf("%c",maze_str[i][j]);
+        }
+     }
+}
+
+void printMazeBinary(){
      for (int i = 0; i < rows; ++i) {
          
             for (int j = 0; j < cols; ++j) {
-                printf("%d ",maze[i][j]);
+                printf("%d",maze[i][j]);
         }
         printf("\n");
      }
-
 }
-
 
 void generateMaze(char* file_name)
 {
@@ -168,24 +184,29 @@ void generateMaze(char* file_name)
         for (j = 0; j < cols; ++j) {
             
             c = getc(maze_file);
-
+            maze_str[i][j] = c; // charlardan maze'imi olusturuyorum
             if (c =='+' || c =='-' || c =='|' || c == '\n')
             {
                 maze[i][j] = 0;
             }
+            else if (c == 'o')
+            {
+                maze[i][j] = 3; // elmali olan yollar 3 olarak isaretlendi
+            }
+            
             else
             {
                 maze[i][j] = 1;
             }
             
             if (c =='b') {
-                baslangic_row = i;
-                baslangic_col = j;
+                baslangic_position.row = i;
+                baslangic_position.col = j;
             }
 
             if (c =='c') {
-                bitis_row = i;
-                bitis_col = j;
+                bitis_position.row = i;
+                bitis_position.col = j;
             }
         }
     }
@@ -200,25 +221,23 @@ int main()
 {
 
 
+    allocateMaze();
+
     struct node* root = (struct node*)malloc(sizeof(struct node));
     root = NULL;
     
     // root->next = NULL;
     generateMaze("maze.txt");
-    printMaze();
+    printMazeBinary();
+
+    printMazeStr();
+
     // root->pos.row = baslangic_row;
     // root->pos.col = baslangic_col;
 
-    struct position baslangic_pos;
-    baslangic_pos.row = baslangic_row;
-    baslangic_pos.col = baslangic_col;
-    root = push(root,baslangic_pos);
-    baslangic_pos.row = baslangic_row+1;
-    baslangic_pos.col = baslangic_col+1;
-    root = push(root,baslangic_pos);
-    baslangic_pos.row = baslangic_row+2;
-    baslangic_pos.col = baslangic_col+2;
-    root = push(root,baslangic_pos);
+    root = push(root,baslangic_position);
+    root = push(root,bitis_position);
+
 
     struct position baslangic_pos1;
     struct position baslangic_pos2;
@@ -233,7 +252,7 @@ int main()
 
     // stackin son elemanini pop edince bozuluyor!
     baslangic_pos1 = pop(root);
-    baslangic_pos2 = pop(root);
+    // baslangic_pos2 = pop(root);
     // baslangic_pos3 = pop(root);
     // baslangic_pos4 = pop(root);
 
@@ -241,11 +260,11 @@ int main()
     // baslangic_pos1 = pop(root);
 
     printAllStruct(root);
-    printf("baslangic row : %d\t",baslangic_row);
-    printf("baslangic col : %d\n",baslangic_col);
+    printf("baslangic row : %d\t",baslangic_position.row);
+    printf("baslangic col : %d\n",baslangic_position.col);
 
-    printf("bitis row : %d\t",bitis_row);
-    printf("bitis col : %d\n",bitis_col);
+    printf("bitis row : %d\t",bitis_position.row);
+    printf("bitis col : %d\n",bitis_position.col);
 
     return 0;
 }
