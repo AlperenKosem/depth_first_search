@@ -33,6 +33,25 @@ struct node
 
 struct position pop(struct node*);
 struct node* push(struct node*, struct position);
+void printAllStruct(struct node*);
+
+
+void printAllStruct(struct node* root){
+    if (root == NULL)
+    {
+        root = (struct node*) malloc(sizeof(struct node));
+        // root->data = a;
+        root->next = NULL;
+    }
+    
+    while ( root != NULL)
+    {
+        printf("Gezilen row %d\t gezilen column: %d\n",root->pos.row,root->pos.col);
+        root = root->next;
+    }
+    
+}
+
 
 struct position pop(struct node* root){
     if( root == NULL ){
@@ -69,17 +88,21 @@ struct position pop(struct node* root){
 
 struct node* push(struct node* root, struct position data){ // void de yazilabilir ama bos olmasi durumunda bir root döndürmeli bos olmaması durumunda root'a dokunmuyoruz zaten
     if( root == NULL){ //eger stack bos ise
-         root = (struct node*) malloc(sizeof(struct node));
+         root = (struct node*)malloc(sizeof(struct node));
          root->pos.row = data.row;
          root->pos.col = data.col;
          root->next = NULL;
+         printf("ROOT BOS\n");
          return root;
     }
 
     struct node* iter = root;
     while(iter->next!= NULL){
         iter = iter->next;
+        printf("ROOT DOLU\n");
     }
+   
+
     struct node* temp = (struct node*)malloc(sizeof(struct node));
     temp->pos.row = data.row;
     temp->pos.col = data.col;
@@ -176,8 +199,48 @@ void generateMaze(char* file_name)
 int main()
 {
 
+
+    struct node* root = (struct node*)malloc(sizeof(struct node));
+    root = NULL;
+    
+    // root->next = NULL;
     generateMaze("maze.txt");
     printMaze();
+    // root->pos.row = baslangic_row;
+    // root->pos.col = baslangic_col;
+
+    struct position baslangic_pos;
+    baslangic_pos.row = baslangic_row;
+    baslangic_pos.col = baslangic_col;
+    root = push(root,baslangic_pos);
+    baslangic_pos.row = baslangic_row+1;
+    baslangic_pos.col = baslangic_col+1;
+    root = push(root,baslangic_pos);
+    baslangic_pos.row = baslangic_row+2;
+    baslangic_pos.col = baslangic_col+2;
+    root = push(root,baslangic_pos);
+
+    struct position baslangic_pos1;
+    struct position baslangic_pos2;
+    struct position baslangic_pos3;
+    struct position baslangic_pos4;
+
+
+    printAllStruct(root);
+
+    printf("Poptan once \n");
+
+
+    // stackin son elemanini pop edince bozuluyor!
+    baslangic_pos1 = pop(root);
+    baslangic_pos2 = pop(root);
+    // baslangic_pos3 = pop(root);
+    // baslangic_pos4 = pop(root);
+
+
+    // baslangic_pos1 = pop(root);
+
+    printAllStruct(root);
     printf("baslangic row : %d\t",baslangic_row);
     printf("baslangic col : %d\n",baslangic_col);
 
