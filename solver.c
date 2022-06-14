@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 // #define maze_rows 11
 // #define maze_cols 16 
 
@@ -7,12 +8,14 @@
 #define maze_cols 44 
 
 char** maze_str; //maze'i sakladigim degisken 
-char** visited;
 
 int rows = maze_rows;
 int cols = maze_cols ;
 int maze[maze_rows][maze_cols];
-int* apples;
+
+int toplam_puan;
+
+int cikmaz_sokak; // cikmaz sokaga girdiginde 1 olur
 
 
 struct position baslangic_position;
@@ -36,6 +39,20 @@ struct node* push(struct node*, struct position);
 void printAllStruct(struct node*);
 
 
+void delay(int number_of_seconds) // ref: https://www.geeksforgeeks.org/time-delay-c/
+{
+    // Converting time into milli_seconds
+    int milli_seconds = 1000 * number_of_seconds;
+  
+    // Storing start time
+    clock_t start_time = clock();
+  
+    // looping till required time is not achieved
+    while (clock() < start_time + milli_seconds)
+        ;
+}
+
+
 void printAllStruct(struct node* root){
     if (root == NULL)
     {
@@ -46,13 +63,14 @@ void printAllStruct(struct node* root){
     
     while ( root != NULL)
     {
-        printf("Gezilen row %d\t gezilen column: %d\n",root->pos.row,root->pos.col);
+        printf(" row %d\t  column: %d\n",root->pos.row,root->pos.col);
         root = root->next;
     }
     
 }
 
 struct position pop(struct node* root){
+    // printf("POP\n");
     if( root == NULL ){
         struct position tmp_pos;
         tmp_pos.row = NULL;
@@ -91,14 +109,14 @@ struct node* push(struct node* root, struct position data){ // void de yazilabil
          root->pos.row = data.row;
          root->pos.col = data.col;
          root->next = NULL;
-         printf("ROOT BOS\n");
+        //  printf("ROOT BOS\n");
          return root;
     }
 
     struct node* iter = root;
     while(iter->next!= NULL){
         iter = iter->next;
-        printf("ROOT DOLU\n");
+        // printf("ROOT DOLU\n");
     }
    
 
@@ -127,11 +145,13 @@ void allocateMaze()
 }
 
 void printMazeStr(){
-     for (int i = 0; i < rows; ++i) {
-            for (int j = 0; j < cols; ++j) {
-                printf("%c",maze_str[i][j]);
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            printf("%c",maze_str[i][j]);
         }
-     }
+    }
+    printf("Toplam Puan : %d\n",toplam_puan);
+    delay(100);
 }
 
 void printMazeBinary(){
@@ -152,7 +172,7 @@ void generateMaze(char* file_name)
         // int cols_counter = 0;
         // int rows_counter = 1;
         // int toplam_char = 0;
-        // while ((c = getc(maze_file) != EOF)) /*  Bu bloktaki gibi degisken satır ve sütunda da program çalışsın istedim. Ancak her mazede farklı donus veriyordu. Ozetlemek gerekirse newline gelene kadar olan karakteri sayiyordu
+        // while ((c = getc(maze_file) != EOF))   Bu bloktaki gibi degisken satır ve sütunda da program çalışsın istedim. Ancak her mazede farklı donus veriyordu. Ozetlemek gerekirse newline gelene kadar olan karakteri sayiyordu
                                                     //bu kadar sütunum var diyodu kaç kez newline geldiyse de satir sayisini çıkarıyordu ancak mazelerde farklı sonuc veriyordu. Ben de burayı hardcoded yaptım.
         // {
         //     toplam_char += 1;
@@ -216,10 +236,88 @@ void generateMaze(char* file_name)
 }
 
 
+int dfs(struct position* pos, struct node* root)
+{   
+    struct position current_pos;
+    current_pos.col = pos->col;
+    current_pos.row = pos->row;
+    if ((current_pos.col) == (bitis_position.col) && ( current_pos.row) == (bitis_position.row))
+    {
+        return 1;
+    }
+
+    if (maze[current_pos.row][current_pos.col] == 1 || maze[current_pos.row][current_pos.col] == 3 ) // elma veya gidilebilir alan ise
+    {   
+        if (cikmaz_sokak)
+        {
+            // printf("YANLIS YOL !! \n\n");
+            toplam_puan -= 5;
+        }
+        cikmaz_sokak = 0;
+        
+
+        if (maze[current_pos.row][current_pos.col] == 3)
+        {
+            // printf("Elma Buldum!\n\n");
+            toplam_puan += 10;
+        }
+        maze[current_pos.row][current_pos.col] = 4; //visited olarak isaretledim
+
+        maze_str[current_pos.row][current_pos.col] = '*'; // gosterimsel olarak da char maze'imde isaretledim.
+        printMazeStr();
+
+
+        root = push(root,current_pos); //geldigimiz noktayı stack'e pushladik.
+
+        struct position tmp_sol;
+        tmp_sol.row = current_pos.row;
+        tmp_sol.col = current_pos.col - 1; // sola bakıyoruz.
+
+        struct position tmp_sag;
+        tmp_sag.row = current_pos.row;
+        tmp_sag.col = current_pos.col + 1; // saga bakıyoruz.
+
+        struct position tmp_ust;
+        tmp_ust.row = current_pos.row - 1;
+        tmp_ust.col = current_pos.col; // uste bakıyoruz.
+
+        struct position tmp_alt;
+        tmp_alt.row = current_pos.row + 1;
+        tmp_alt.col = current_pos.col; // alta bakıyoruz.
+
+        
+        if (dfs(&tmp_sol,root)) // sol kutuya bakıyoruz
+        {   
+            return 1;
+        }
+
+        if (dfs(&tmp_sag,root)) // sag kutuya bakıyoruz
+        {
+            return 1;
+        }
+
+        if (dfs(&tmp_ust,root)) // ust kutuya bakıyoruz
+        {
+            return 1;
+        }
+
+        if (dfs(&tmp_alt,root)) // alt kutuya bakıyoruz
+        {
+            return 1;
+        }
+
+        struct position tmp_yanlisyol;
+        tmp_yanlisyol = pop(root); //gittigim yanlis yollari stack'ten cikariyorum.
+        
+        maze_str[current_pos.row][current_pos.col] = ' ';
+        cikmaz_sokak = 1;
+    }
+
+    return 0 ; //cikmaz sokak    
+}
 
 int main()
 {
-
 
     allocateMaze();
 
@@ -228,43 +326,41 @@ int main()
     
     // root->next = NULL;
     generateMaze("maze.txt");
+
+    printf("MAZE COZULMEDEN ONCE\n\n");
+
+
+    printf("Integerlardan olusan hali\nElmalar: 3\nGidilebilir Yollar: 1\nDuvarlar ise 0 ile gösterilmistir\n\n");
+
+
     printMazeBinary();
+
+
+    printf("\nMaze'in anlasilabilir hali:\n");
 
     printMazeStr();
 
-    // root->pos.row = baslangic_row;
-    // root->pos.col = baslangic_col;
-
-    root = push(root,baslangic_position);
-    root = push(root,bitis_position);
-
-
-    struct position baslangic_pos1;
-    struct position baslangic_pos2;
-    struct position baslangic_pos3;
-    struct position baslangic_pos4;
-
-
-    printAllStruct(root);
-
-    printf("Poptan once \n");
-
-
-    // stackin son elemanini pop edince bozuluyor!
-    baslangic_pos1 = pop(root);
-    // baslangic_pos2 = pop(root);
-    // baslangic_pos3 = pop(root);
-    // baslangic_pos4 = pop(root);
-
-
-    // baslangic_pos1 = pop(root);
-
-    printAllStruct(root);
     printf("baslangic row : %d\t",baslangic_position.row);
     printf("baslangic col : %d\n",baslangic_position.col);
 
     printf("bitis row : %d\t",bitis_position.row);
     printf("bitis col : %d\n",bitis_position.col);
+
+    delay(1000); //kullanıcının incelemesi icin süre
+
+    root = push(root,baslangic_position); // baslangic pozisyonumu stack'e attım. Gittigim yollar boyu stacki dolduracağım yanlıs gidersem bosalticagim.
+
+
+    printAllStruct(&root);
+    
+    
+    int a = dfs(&baslangic_position,root);
+
+    printf("================= \n");
+
+    printf("Sırasıyla gidilen Yollar: \n");
+    printAllStruct(root);
+
 
     return 0;
 }
